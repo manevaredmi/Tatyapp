@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taty Ultra Pro</title>
+    <style>
+        :root {
+            --primary: #4e73df; --success: #1cc88a; --danger: #e74a3b;
+            --warning: #f6c23e; --info: #36b9cc; --dark: #5a5c69; --bg: #f8f9fc; --pix: #25D366;
+        }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); font-size: 14px; }
+        .container { max-width: 500px; margin: auto; }
+        
+        /* Dashboard */
+        .dash { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; }
+        .dash-card { background: white; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 3px solid var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .dash-card h6 { margin: 0; font-size: 0.6rem; text-transform: uppercase; color: var(--dark); }
+        .dash-card div { font-weight: bold; font-size: 0.9rem; margin-top: 5px; }
+
+        /* Alerta de Vencimento */
+        #alerta-vencido { 
+            display: none; background: var(--danger); color: white; padding: 10px; 
+            border-radius: 8px; margin-bottom: 10px; text-align: center; font-weight: bold;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0.6;} 100% {opacity: 1;} }
+
+        .tabs { display: flex; gap: 3px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .tab-btn { flex: none; padding: 10px 12px; border: none; border-radius: 8px; background: #ddd; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        form, .card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #e3e6f0; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
+        .btn-add { background: var(--primary); }
+        .btn-update { background: var(--warning); color: black; }
+        
+        .lista { list-style: none; padding: 0; }
+        .item { background: #fff; margin-bottom: 8px; padding: 12px; border-radius: 8px; border-left: 5px solid #ccc; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
+        .vencido { border-left: 8px solid var(--danger) !important; background: #fff5f5; }
+        .prio-URGENTE { border-left-color: var(--danger); }
+        .prio-IMPORTANTE { border-left-color: var(--warning); }
+        .prio-ROTINA { border-left-color: var(--info); }
+        
+        .acoes { display: flex; gap: 4px; margin-top: 10px; flex-wrap: wrap; }
+        .btn-mini { flex: 1; min-width: 40px; padding: 8px; border: none; border-radius: 4px; color: white; font-size: 0.65rem; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; }
+        
+        @media print { .tabs, form, .acoes, .btn, button, h3, h4 { display: none !important; } .section { display: block !important; } .item { border: 1px solid #ccc; margin-bottom: 5px; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3 style="text-align:center;">🚀 Taty Ultra Pro</h3>
+
+    <div id="alerta-vencido">⚠️ ATENÇÃO: COBRANÇAS VENCIDAS!</div>
+
+    <div class="dash">
+        <div class="dash-card" style="border-bottom-color: var(--success)">
+            <h6>A Receber</h6><div id="dash-receber" style="color:var(--success)">R$ 0,00</div>
+        </div>
+        <div class="dash-card" style="border-bottom-color: var(--danger)">
+            <h6>Contas</h6><div id="dash-contas" style="color:var(--danger)">R$ 0,00</div>
+        </div>
+        <div class="dash-card" style="border-bottom-color: var(--primary)">
+            <h6>Lucro</h6><div id="dash-lucro" style="color:var(--primary)">R$ 0,00</div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(event, 'vendas')">Vendas</button>
+        <button class="tab-btn" onclick="switchTab(event, 'contas')">Contas</button>
+        <button class="tab-btn" onclick="switchTab(event, 'agenda')">Agenda</button>
+        <button class="tab-btn" onclick="switchTab(event, 'config')">⚙️ Config</button>
+    </div>
+
+    <div id="sec-vendas" class="section active">
+        <form id="f-vendas" onsubmit="saveVenda(event)">
+            <input type="hidden" id="v-id">
+            <input type="text" id="v-cliente" placeholder="Nome do Cliente" value="João Silva">
+            <input type="text" id="v-zap" placeholder="WhatsApp (55...)" value="5511900000000">
+            <input type="text" id="v-prod" placeholder="Produto/Serviço" value="Manutenção">
+            <input type="number" step="0.01" id="v-valor" placeholder="Valor R$" value="180.00">
+            <input type="date" id="v-data" value="2026-02-26">
+            <button type="submit" id="btn-v-main" class="btn btn-add">Salvar Venda</button>
+        </form>
+        <ul id="listaVendas" class="lista"></ul>
+        <h4>✅ Concluídas</h4>
+        <ul id="listaVendasPagas" class="lista"></ul>
+    </div>
+
+    <div id="sec-contas" class="section">
+        <form id="f-contas" onsubmit="saveConta(event)">
+            <input type="hidden" id="c-id">
+            <input type="text" id="c-nome" placeholder="Nome da Conta" value="Aluguel">
+            <input type="number" step="0.01" id="c-valor" placeholder="Valor R$" value="1200.00">
+            <input type="date" id="c-data" value="2026-03-10">
+            <button type="submit" id="btn-c-main" class="btn btn-add">Salvar Conta</button>
+        </form>
+        <ul id="listaContas" class="lista"></ul>
+    </div>
+
+    <div id="sec-agenda" class="section">
+        <form id="f-agenda" onsubmit="saveAgenda(event)">
+            <input type="hidden" id="a-id">
+            <input type="text" id="a-task" placeholder="Compromisso" value="Visita Técnica">
+            <select id="a-prio">
+                <option value="URGENTE">🔴 Urgente</option>
+                <option value="IMPORTANTE">🟡 Importante</option>
+                <option value="ROTINA" selected>🔵 Rotina</option>
+            </select>
+            <input type="date" id="a-data" value="2026-02-27">
+            <button type="submit" id="btn-a-main" class="btn btn-add">Agendar</button>
+        </form>
+        <ul id="listaAgenda" class="lista"></ul>
+    </div>
+
+    <div id="sec-config" class="section">
+        <div class="card">
+            <h4>⚙️ Dados Pix</h4>
+            <input type="text" id="cfg-chave" placeholder="Sua Chave Pix" value="exemplo@pix.com">
+            <input type="text" id="cfg-titular" placeholder="Seu Nome" value="Empresa Exemplo">
+            <button class="btn" style="background:var(--success)" onclick="savePixCfg()">Salvar Pix</button>
+        </div>
+        <div class="card">
+            <h4>📄 Relatórios</h4>
+            <button class="btn" style="background:var(--warning); color:black;" onclick="tocarAlerta()">Testar Som de Alerta</button>
+            <button class="btn" style="background:var(--info)" onclick="window.print()">Gerar PDF</button>
+            <button class="btn" style="background:var(--dark)" onclick="exportCSV()">Exportar Excel (CSV)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let dbVendas = JSON.parse(localStorage.getItem('db_v_final')) || [];
+    let dbContas = JSON.parse(localStorage.getItem('db_c_final')) || [];
+    let dbAgenda = JSON.parse(localStorage.getItem('db_a_final')) || [];
+    let pixCfg = JSON.parse(localStorage.getItem('db_pix_final')) || { chave: "", titular: "" };
+
+    function switchTab(e, tab) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('sec-' + tab).classList.add('active');
+        if(e) e.target.classList.add('active');
+    }
+
+    function clearForm(tipo) {
+        if(tipo === 'v') { ['v-id','v-cliente','v-zap','v-prod','v-valor','v-data'].forEach(id => document.getElementById(id).value = ""); document.getElementById('btn-v-main').innerText = "Salvar Venda"; document.getElementById('btn-v-main').className="btn btn-add"; }
+        if(tipo === 'c') { ['c-id','c-nome','c-valor','c-data'].forEach(id => document.getElementById(id).value = ""); document.getElementById('btn-c-main').innerText = "Salvar Conta"; document.getElementById('btn-c-main').className="btn btn-add"; }
+        if(tipo === 'a') { ['a-id','a-task','a-data'].forEach(id => document.getElementById(id).value = ""); document.getElementById('btn-a-main').innerText = "Agendar"; document.getElementById('btn-a-main').className="btn btn-add"; }
+    }
+
+    function tocarAlerta() {
+        const context = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, context.currentTime);
+        oscillator.connect(gain); gain.connect(context.destination);
+        oscillator.start(); gain.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1);
+        oscillator.stop(context.currentTime + 1);
+    }
+
+    // VENDAS
+    function saveVenda(e) {
+        e.preventDefault();
+        const id = document.getElementById('v-id').value;
+        const dados = { id: id ? parseInt(id) : Date.now(), cli: document.getElementById('v-cliente').value, zap: document.getElementById('v-zap').value, prod: document.getElementById('v-prod').value, val: parseFloat(document.getElementById('v-valor').value), data: document.getElementById('v-data').value, pago: id ? dbVendas.find(x=>x.id===parseInt(id)).pago : false };
+        if(id) dbVendas = dbVendas.map(v => v.id === parseInt(id) ? dados : v); else dbVendas.push(dados);
+        clearForm('v'); render();
+    }
+    function editVenda(id) {
+        const v = dbVendas.find(x=>x.id===id);
+        document.getElementById('v-id').value = v.id; document.getElementById('v-cliente').value = v.cli; document.getElementById('v-zap').value = v.zap;
+        document.getElementById('v-prod').value = v.prod; document.getElementById('v-valor').value = v.val; document.getElementById('v-data').value = v.data;
+        document.getElementById('btn-v-main').innerText = "ATUALIZAR Venda"; document.getElementById('btn-v-main').className="btn btn-update";
+    }
+
+    // CONTAS
+    function saveConta(e) {
+        e.preventDefault();
+        const id = document.getElementById('c-id').value;
+        const dados = { id: id ? parseInt(id) : Date.now(), n: document.getElementById('c-nome').value, v: parseFloat(document.getElementById('c-valor').value), d: document.getElementById('c-data').value };
+        if(id) dbContas = dbContas.map(c => c.id === parseInt(id) ? dados : c); else dbContas.push(dados);
+        clearForm('c'); render();
+    }
+    function editConta(id) {
+        const c = dbContas.find(x=>x.id===id);
+        document.getElementById('c-id').value = c.id; document.getElementById('c-nome').value = c.n; document.getElementById('c-valor').value = c.v; document.getElementById('c-data').value = c.d;
+        document.getElementById('btn-c-main').innerText = "ATUALIZAR Conta"; document.getElementById('btn-c-main').className="btn btn-update";
+    }
+
+    // AGENDA
+    function saveAgenda(e) {
+        e.preventDefault();
+        const id = document.getElementById('a-id').value;
+        const dados = { id: id ? parseInt(id) : Date.now(), t: document.getElementById('a-task').value, p: document.getElementById('a-prio').value, d: document.getElementById('a-data').value };
+        if(id) dbAgenda = dbAgenda.map(a => a.id === parseInt(id) ? dados : a); else dbAgenda.push(dados);
+        clearForm('a'); render();
+    }
+    function editAgenda(id) {
+        const a = dbAgenda.find(x=>x.id===id);
+        document.getElementById('a-id').value = a.id; document.getElementById('a-task').value = a.t; document.getElementById('a-prio').value = a.p; document.getElementById('a-data').value = a.d;
+        document.getElementById('btn-a-main').innerText = "ATUALIZAR Agenda"; document.getElementById('btn-a-main').className="btn btn-update";
+    }
+
+    function savePixCfg() {
+        pixCfg.chave = document.getElementById('cfg-chave').value; pixCfg.titular = document.getElementById('cfg-titular').value;
+        localStorage.setItem('db_pix_final', JSON.stringify(pixCfg)); alert("Salvo!");
+    }
+
+    function exportCSV() {
+        let csv = "Tipo;Nome;Valor;Data\n";
+        dbVendas.forEach(v => csv += `VENDA;${v.cli};${v.val};${v.data}\n`);
+        const blob = new Blob([csv], {type: 'text/csv'}); window.open(URL.createObjectURL(blob));
+    }
+
+    function render() {
+        localStorage.setItem('db_v_final', JSON.stringify(dbVendas));
+        localStorage.setItem('db_c_final', JSON.stringify(dbContas));
+        localStorage.setItem('db_a_final', JSON.stringify(dbAgenda));
+
+        const hoje = new Date().toISOString().split('T')[0];
+        const amanha = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        let temVencido = false;
+
+        // Dash
+        const totalReceber = dbVendas.filter(v=>!v.pago).reduce((s,v)=>s+v.val, 0);
+        const totalContas = dbContas.reduce((s,c)=>s+c.v, 0);
+        document.getElementById('dash-receber').innerText = `R$ ${totalReceber.toFixed(2)}`;
+        document.getElementById('dash-contas').innerText = `R$ ${totalContas.toFixed(2)}`;
+        document.getElementById('dash-lucro').innerText = `R$ ${(totalReceber - totalContas).toFixed(2)}`;
+
+        // Listas Vendas
+        const lV = document.getElementById('listaVendas'); const lVP = document.getElementById('listaVendasPagas');
+        lV.innerHTML = ''; lVP.innerHTML = '';
+        dbVendas.sort((a,b)=>a.data.localeCompare(b.data)).forEach(v => {
+            const isVencido = v.data <= hoje && !v.pago; if(isVencido) temVencido = true;
+            const msgPix = encodeURIComponent(`Olá ${v.cli}!\nLembrete de pagamento: ${v.prod}.\nValor: R$ ${v.val}\nChave: ${pixCfg.chave}`);
+            const html = `<li class="item ${isVencido ? 'vencido' : ''}">
+                <b>${v.cli}</b> - ${v.prod}<br><small>R$ ${v.val.toFixed(2)} | Venc: ${v.data}</small>
+                <div class="acoes">
+                    ${!v.pago ? `<button class="btn-mini" style="background:var(--success)" onclick="dbVendas.find(x=>x.id===${v.id}).pago=true;render()">OK</button>` : `<button class="btn-mini" style="background:var(--dark)" onclick="dbVendas.find(x=>x.id===${v.id}).pago=false;render()">⟲</button>`}
+                    <button class="btn-mini" style="background:var(--info)" onclick="editVenda(${v.id})">✏️</button>
+                    <a href="https://wa.me/${v.zap}" target="_blank" class="btn-mini" style="background:var(--pix)">ZAP</a>
+                    ${(v.data === hoje || v.data === amanha) && !v.pago ? `<a href="https://wa.me/${v.zap}?text=${msgPix}" target="_blank" class="btn-mini" style="background:var(--danger)">PIX</a>` : ''}
+                    <button class="btn-mini" style="background:var(--danger)" onclick="if(confirm('Excluir?')){dbVendas=dbVendas.filter(x=>x.id!==${v.id});render()}">✖</button>
+                </div></li>`;
+            if(v.pago) lVP.innerHTML += html; else lV.innerHTML += html;
+        });
+
+        // Contas
+        const lC = document.getElementById('listaContas'); lC.innerHTML = '';
+        dbContas.forEach(c => lC.innerHTML += `<li class="item"><b>${c.n}</b> - R$ ${c.v.toFixed(2)}<br><small>${c.d}</small><div class="acoes"><button class="btn-mini" style="background:var(--info)" onclick="editConta(${c.id})">✏️</button><button class="btn-mini" style="background:var(--danger)" onclick="dbContas=dbContas.filter(x=>x.id!==${c.id});render()">✖</button></div></li>`);
+
+        // Agenda
+        const lA = document.getElementById('listaAgenda'); lA.innerHTML = '';
+        dbAgenda.forEach(a => lA.innerHTML += `<li class="item prio-${a.p}"><b>${a.t}</b> - ${a.d}<div class="acoes"><button class="btn-mini" style="background:var(--info)" onclick="editAgenda(${a.id})">✏️</button><button class="btn-mini" style="background:var(--danger)" onclick="dbAgenda=dbAgenda.filter(x=>x.id!==${a.id});render()">✖</button></div></li>`);
+
+        document.getElementById('alerta-vencido').style.display = temVencido ? 'block' : 'none';
+        if(temVencido) tocarAlerta();
+    }
+
+    document.getElementById('cfg-chave').value = pixCfg.chave;
+    document.getElementById('cfg-titular').value = pixCfg.titular;
+    render();
+</script>
+</body>
+</html>
+
