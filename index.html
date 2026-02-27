@@ -11,7 +11,7 @@
             --warning: #f6c23e; --info: #36b9cc; --dark: #5a5c69; --bg: #f8f9fc; --pix: #25D366;
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); }
-        .container { max-width: 500px; margin: auto; display: none; }
+        .container { max-width: 500px; margin: auto; }
         
         #alerta-vencido { display: none; background: var(--danger); color: white; padding: 12px; border-radius: 10px; margin-bottom: 15px; text-align: center; font-weight: bold; animation: pulse 1s infinite; }
         @keyframes pulse { 0% {opacity: 1;} 50% {opacity: 0.5;} 100% {opacity: 1;} }
@@ -37,19 +37,12 @@
         
         .lista { list-style: none; padding: 0; }
         .item { background: #fff; margin-bottom: 10px; padding: 15px; border-radius: 10px; border-left: 6px solid #ccc; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .vencido { border-left-color: var(--danger) !important; background: #fff5f5; }
         
         .acoes { display: flex; gap: 6px; margin-top: 12px; }
         .btn-mini { flex: 1; padding: 10px; border: none; border-radius: 6px; color: white; font-size: 12px; cursor: pointer; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
-
-<div id="login-box" style="text-align: center; margin-top: 100px;">
-    <h2>🔐 Acesso Restrito</h2>
-    <input type="password" id="pass" placeholder="Digite a Senha" style="width: 200px;">
-    <button class="btn btn-add" style="width: 200px;" onclick="checkPass()">Entrar</button>
-</div>
 
 <div class="container" id="app">
     <h2 style="text-align:center; color: var(--primary);">🚀 Taty Ultra Pro</h2>
@@ -125,19 +118,10 @@
 </div>
 
 <script>
-    const PASS_CORRECT = "551506";
     let dbV = JSON.parse(localStorage.getItem('dbV')) || [];
     let dbC = JSON.parse(localStorage.getItem('dbC')) || [];
     let dbA = JSON.parse(localStorage.getItem('dbA')) || [];
     let pix = localStorage.getItem('dbPix') || "";
-
-    function checkPass() {
-        if(document.getElementById('pass').value === PASS_CORRECT) {
-            document.getElementById('login-box').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            render();
-        } else { alert("Senha Incorreta!"); }
-    }
 
     function switchTab(e, tab) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -146,42 +130,21 @@
         if(e) e.target.classList.add('active');
     }
 
-    // --- FUNÇÕES DE AGENDA (CORRIGIDAS) ---
     function handleAgenda(e) {
         e.preventDefault();
         const id = document.getElementById('a-id').value;
-        const a = { 
-            id: id ? parseInt(id) : Date.now(), 
-            t: document.getElementById('a-task').value, 
-            p: document.getElementById('a-prio').value, 
-            d: document.getElementById('a-data').value 
-        };
+        const a = { id: id ? parseInt(id) : Date.now(), t: document.getElementById('a-task').value, p: document.getElementById('a-prio').value, d: document.getElementById('a-data').value };
         if(id) dbA = dbA.map(x => x.id == id ? a : x); else dbA.push(a);
-        resetAgenda(); 
-        render();
+        resetAgenda(); render();
     }
-
-    function resetAgenda() {
-        document.getElementById('f-agenda').reset();
-        document.getElementById('a-id').value = "";
-        document.getElementById('btn-a-main').innerText = "Agendar";
-        document.getElementById('btn-a-main').className = "btn btn-add";
-    }
-
+    function resetAgenda() { document.getElementById('f-agenda').reset(); document.getElementById('a-id').value = ""; document.getElementById('btn-a-main').innerText = "Agendar"; document.getElementById('btn-a-main').className = "btn btn-add"; }
     function editAgenda(id) {
         const a = dbA.find(x => x.id == id);
-        document.getElementById('a-id').value = a.id;
-        document.getElementById('a-task').value = a.t;
-        document.getElementById('a-prio').value = a.p;
-        document.getElementById('a-data').value = a.d;
-        document.getElementById('btn-a-main').innerText = "ATUALIZAR";
-        document.getElementById('btn-a-main').className = "btn btn-update";
-        switchTab(null, 'agenda');
-        document.getElementById('btn-tab-agenda').classList.add('active');
-        window.scrollTo(0,0);
+        document.getElementById('a-id').value = a.id; document.getElementById('a-task').value = a.t; document.getElementById('a-prio').value = a.p; document.getElementById('a-data').value = a.d;
+        document.getElementById('btn-a-main').innerText = "ATUALIZAR"; document.getElementById('btn-a-main').className = "btn btn-update";
+        switchTab(null, 'agenda'); document.getElementById('btn-tab-agenda').classList.add('active'); window.scrollTo(0,0);
     }
 
-    // --- RESTANTE DAS FUNÇÕES ---
     function handleVenda(e) {
         e.preventDefault();
         const id = document.getElementById('v-id').value;
@@ -209,17 +172,16 @@
         const c = dbC.find(x => x.id == id);
         document.getElementById('c-id').value = c.id; document.getElementById('c-nome').value = c.n; document.getElementById('c-valor').value = c.v; document.getElementById('c-data').value = c.d;
         document.getElementById('btn-c-main').innerText = "ATUALIZAR"; document.getElementById('btn-c-main').className = "btn btn-update";
-        switchTab(null, 'contas'); document.getElementById('btn-tab-contas').classList.add('active');
+        switchTab(null, 'contas'); document.getElementById('btn-tab-contas').classList.add('active'); window.scrollTo(0,0);
     }
 
     function savePix() { pix = document.getElementById('cfg-pix').value; localStorage.setItem('dbPix', pix); alert("Pix Salvo!"); }
-    function exportPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("Relatório Financeiro", 10, 10); doc.save("TatyFinanceiro.pdf"); }
+    function exportPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("Relatório Financeiro", 10, 10); doc.save("Relatorio.pdf"); }
 
     function render() {
         localStorage.setItem('dbV', JSON.stringify(dbV));
         localStorage.setItem('dbC', JSON.stringify(dbC));
         localStorage.setItem('dbA', JSON.stringify(dbA));
-
         const query = document.getElementById('search-box').value.toLowerCase();
         const hoje = new Date().toISOString().split('T')[0];
         let alertar = false;
@@ -255,9 +217,9 @@
                 la.innerHTML += `<li class="item"><b>${a.t}</b> - ${a.d}<br><small>${a.p}</small><div class="acoes"><button class="btn-mini" style="background:var(--info)" onclick="editAgenda(${a.id})">✏️</button><button class="btn-mini" style="background:var(--danger)" onclick="dbA=dbA.filter(x=>x.id!=${a.id});render()">✖</button></div></li>`;
             }
         });
-
         document.getElementById('alerta-vencido').style.display = alertar ? 'block' : 'none';
     }
+    render();
 </script>
 </body>
 </html>
