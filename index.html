@@ -66,11 +66,11 @@
     <div id="sec-vendas" class="section active">
         <form id="f-vendas" onsubmit="handleVenda(event)">
             <input type="hidden" id="v-id">
-            <input type="text" id="v-cliente" placeholder="Nome do Cliente" required>
-            <input type="text" id="v-zap" placeholder="WhatsApp" required>
-            <input type="text" id="v-prod" placeholder="Produto" required>
-            <input type="number" step="0.01" id="v-valor" placeholder="Valor" required>
-            <input type="date" id="v-data" required>
+            <input type="text" id="v-cliente" value="Marcos Silva" placeholder="Nome do Cliente" required>
+            <input type="text" id="v-zap" value="11930193300" placeholder="WhatsApp" required>
+            <input type="text" id="v-prod" value="Corte de Cabelo" placeholder="Produto" required>
+            <input type="number" step="0.01" id="v-valor" value="50.00" placeholder="Valor" required>
+            <input type="date" id="v-data" value="2026-02-28" required>
             <textarea id="v-msg" rows="2" placeholder="Mensagem"></textarea>
             <button type="submit" id="btn-v-main" class="btn btn-add">Salvar Venda</button>
             <button type="button" class="btn" style="background:#ddd; color:#333" onclick="resetVenda()">Limpar</button>
@@ -113,6 +113,17 @@
             <input type="text" id="cfg-pix" placeholder="Chave Pix">
             <button class="btn" style="background:var(--success)" onclick="savePix()">Salvar Pix</button>
             <button class="btn" style="background:var(--info)" onclick="exportPDF()">PDF</button>
+            
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            
+            <h4>💾 Backup de Dados</h4>
+            <p style="font-size: 11px; color: #888; margin-bottom: 10px;">Exporte para salvar ou importe para restaurar seus dados em outro celular.</p>
+            <button class="btn" style="background:var(--dark)" onclick="exportarBackup()">📤 Exportar Backup</button>
+            
+            <label class="btn" style="background:var(--warning); color: #000; display: block; text-align: center; line-height: 24px;">
+                📥 Importar Backup
+                <input type="file" id="importarFile" style="display: none;" onchange="importarBackup(event)">
+            </label>
         </div>
     </div>
 </div>
@@ -129,6 +140,51 @@
         document.getElementById('sec-' + tab).classList.add('active');
         if(e) e.target.classList.add('active');
     }
+
+    // --- FUNÇÕES DE BACKUP ---
+    function exportarBackup() {
+        const dados = {
+            vendas: dbV,
+            contas: dbC,
+            agenda: dbA,
+            pix: pix
+        };
+        const blob = new Blob([JSON.stringify(dados)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_taty_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        alert("Backup exportado com sucesso!");
+    }
+
+    function importarBackup(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const dados = JSON.parse(e.target.result);
+                if (confirm("Isso irá substituir todos os dados atuais. Deseja continuar?")) {
+                    dbV = dados.vendas || [];
+                    dbC = dados.contas || [];
+                    dbA = dados.agenda || [];
+                    pix = dados.pix || "";
+                    
+                    localStorage.setItem('dbPix', pix);
+                    document.getElementById('cfg-pix').value = pix;
+                    
+                    render();
+                    alert("Dados importados com sucesso!");
+                }
+            } catch (err) {
+                alert("Erro ao ler o arquivo de backup.");
+            }
+        };
+        reader.readAsText(file);
+    }
+    // -------------------------
 
     function handleAgenda(e) {
         e.preventDefault();
@@ -191,6 +247,7 @@
         document.getElementById('dash-receber').innerText = `R$ ${rec.toFixed(2)}`;
         document.getElementById('dash-contas').innerText = `R$ ${con.toFixed(2)}`;
         document.getElementById('dash-lucro').innerText = `R$ ${(rec-con).toFixed(2)}`;
+        document.getElementById('cfg-pix').value = pix;
 
         const lv = document.getElementById('listaVendas'); const lvp = document.getElementById('listaVendasPagas');
         const lc = document.getElementById('listaContas'); const la = document.getElementById('listaAgenda');
