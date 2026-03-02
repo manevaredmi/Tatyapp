@@ -103,7 +103,7 @@
             <h4>⚙️ Configurações</h4>
             <input type="text" id="cfg-pix" placeholder="Chave Pix" value="taty@pix.com">
             <button class="btn" style="background:var(--success)" onclick="savePix()">Salvar Pix</button>
-            <button class="btn" style="background:var(--danger)" onclick="resetSaldo()">Zerar Recebido</button>
+            <button class="btn" style="background:var(--danger)" onclick="resetSaldo()">Zerar Recebido/Pagos</button>
             <hr>
             <button class="btn" style="background:var(--dark)" onclick="exportarBackup()">📤 Exportar Backup</button>
             <label class="btn" style="background:var(--warning); color: #000; display: block; text-align: center; cursor: pointer;">
@@ -119,6 +119,7 @@
     let dbC = JSON.parse(localStorage.getItem('dbC')) || [];
     let dbA = JSON.parse(localStorage.getItem('dbA')) || [];
     let saldoRecebido = parseFloat(localStorage.getItem('saldoRecebido')) || 0;
+    let totalDescontado = parseFloat(localStorage.getItem('totalDescontado')) || 0; // Registra o que foi pago com OK
     let pix = localStorage.getItem('dbPix') || "taty@pix.com";
 
     function switchTab(e, tab) {
@@ -140,6 +141,14 @@
         saldoRecebido += valor;
         dbV = dbV.filter(x => x.id !== id);
         localStorage.setItem('saldoRecebido', saldoRecebido);
+        render();
+    }
+
+    // Função que desconta do SALDO apenas no OK
+    function pagarConta(id, valor) {
+        totalDescontado += valor;
+        dbC = dbC.filter(x => x.id !== id);
+        localStorage.setItem('totalDescontado', totalDescontado);
         render();
     }
 
@@ -178,20 +187,27 @@
     }
 
     function savePix() { pix = document.getElementById('cfg-pix').value; localStorage.setItem('dbPix', pix); alert("Salvo!"); }
-    function resetSaldo() { if(confirm("Zerar recebidos?")) { saldoRecebido = 0; localStorage.setItem('saldoRecebido', 0); render(); } }
+    function resetSaldo() { if(confirm("Zerar tudo?")) { saldoRecebido = 0; totalDescontado = 0; localStorage.setItem('saldoRecebido', 0); localStorage.setItem('totalDescontado', 0); render(); } }
 
     function render() {
         localStorage.setItem('dbV', JSON.stringify(dbV));
         localStorage.setItem('dbC', JSON.stringify(dbC));
         localStorage.setItem('dbA', JSON.stringify(dbA));
+        localStorage.setItem('totalDescontado', totalDescontado);
+        
         const q = document.getElementById('search-box').value.toLowerCase();
         const hoje = new Date().toISOString().split('T')[0];
         let alertar = false;
 
-        const totalContas = dbC.reduce((s, c) => s + c.v, 0);
+        const totalContasPendentes = dbC.reduce((s, c) => s + c.v, 0);
+        
+        // Exibição nos Cards
         document.getElementById('dash-recebido').innerText = `R$ ${saldoRecebido.toFixed(2)}`;
-        document.getElementById('dash-contas').innerText = `R$ ${totalContas.toFixed(2)}`;
-        document.getElementById('dash-lucro').innerText = `R$ ${(saldoRecebido - totalContas).toFixed(2)}`;
+        document.getElementById('dash-contas').innerText = `R$ ${totalContasPendentes.toFixed(2)}`;
+        
+        // CÁLCULO DO SALDO: O Recebido NÃO muda. O Saldo é Recebido MENOS o que você deu "OK" (totalDescontado).
+        const saldoFinal = saldoRecebido - totalDescontado;
+        document.getElementById('dash-lucro').innerText = `R$ ${saldoFinal.toFixed(2)}`;
 
         const lv = document.getElementById('listaVendas'); const lc = document.getElementById('listaContas'); const la = document.getElementById('listaAgenda');
         lv.innerHTML = ''; lc.innerHTML = ''; la.innerHTML = '';
@@ -207,15 +223,15 @@
         dbC.forEach(c => { 
             const isVencido = c.d < hoje;
             if(isVencido) alertar = true; 
-            lc.innerHTML += `<li class="item ${isVencido ? 'vencido' : ''}"><b>${c.n}</b> - R$ ${c.v.toFixed(2)} <div class="acoes"><button class="btn-mini" style="background:var(--info)" onclick="editConta(${c.id})">✏️</button><button class="btn-mini" style="background:var(--danger)" onclick="dbC=dbC.filter(x=>x.id!=${c.id});render()">✖</button></div></li>`; 
+            lc.innerHTML += `<li class="item ${isVencido ? 'vencido' : ''}"><b>${c.n}</b> - R$ ${c.v.toFixed(2)} <div class="acoes"><button class="btn-mini" style="background:var(--success)" onclick="pagarConta(${c.id}, ${c.v})">OK</button><button class="btn-mini" style="background:var(--info)" onclick="editConta(${c.id})">✏️</button><button class="btn-mini" style="background:var(--danger)" onclick="dbC=dbC.filter(x=>x.id!=${c.id});render()">✖</button></div></li>`; 
         });
         dbA.forEach(a => { 
             la.innerHTML += `<li class="item"><b>${a.t}</b> - ${a.d} <div class="acoes"><button class="btn-mini" style="background:var(--info)" onclick="editAgenda(${a.id})">✏️</button><button class="btn-mini" style="background:var(--danger)" onclick="dbA=dbA.filter(x=>x.id!=${a.id});render()">✖</button></div></li>`; 
         });
         document.getElementById('alerta-vencido').style.display = alertar ? 'block' : 'none';
     }
-    function exportarBackup() { const b = new Blob([JSON.stringify({v:dbV, c:dbC, a:dbA, s:saldoRecebido, p:pix})], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'backup.json'; a.click(); }
-    function importarBackup(e) { const reader = new FileReader(); reader.onload = (f) => { const d = JSON.parse(f.target.result); dbV=d.v; dbC=d.c; dbA=d.a; saldoRecebido=d.s||0; pix=d.p; localStorage.setItem('saldoRecebido', saldoRecebido); render(); }; reader.readAsText(e.target.files[0]); }
+    function exportarBackup() { const b = new Blob([JSON.stringify({v:dbV, c:dbC, a:dbA, s:saldoRecebido, p:pix, td:totalDescontado})], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'backup.json'; a.click(); }
+    function importarBackup(e) { const reader = new FileReader(); reader.onload = (f) => { const d = JSON.parse(f.target.result); dbV=d.v; dbC=d.c; dbA=d.a; saldoRecebido=d.s||0; totalDescontado=d.td||0; pix=d.p; localStorage.setItem('saldoRecebido', saldoRecebido); localStorage.setItem('totalDescontado', totalDescontado); render(); }; reader.readAsText(e.target.files[0]); }
     render();
 </script>
 </body>
