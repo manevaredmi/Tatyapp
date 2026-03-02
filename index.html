@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Taty Ultra Pro</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --primary: #4e73df; --success: #1cc88a; --danger: #e74a3b;
@@ -33,23 +32,24 @@
         
         .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; margin-bottom: 8px; }
         .btn-add { background: var(--primary); }
-        .btn-update { background: var(--warning); color: #222; }
         
         .lista { list-style: none; padding: 0; }
         .item { background: #fff; margin-bottom: 10px; padding: 15px; border-radius: 10px; border-left: 6px solid #ccc; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
+        .vencido { border-left-color: var(--danger) !important; color: var(--danger) !important; border: 1px solid var(--danger); }
+
         .acoes { display: flex; gap: 6px; margin-top: 12px; }
-        .btn-mini { flex: 1; padding: 10px; border: none; border-radius: 6px; color: white; font-size: 12px; cursor: pointer; font-weight: bold; text-align: center; }
+        .btn-mini { flex: 1; padding: 10px; border: none; border-radius: 6px; color: white; font-size: 11px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; }
     </style>
 </head>
 <body>
 
-<div class="container" id="app">
+<div class="container">
     <h2 style="text-align:center; color: var(--primary);">🚀 Taty Ultra Pro</h2>
     <div id="alerta-vencido">⚠️ EXISTEM CONTAS VENCIDAS!</div>
 
     <div class="dash">
-        <div class="dash-card"><h6>Receber</h6><div id="dash-receber" style="color:var(--success)">R$ 0,00</div></div>
+        <div class="dash-card"><h6>Recebido</h6><div id="dash-recebido" style="color:var(--success)">R$ 0,00</div></div>
         <div class="dash-card"><h6>Contas</h6><div id="dash-contas" style="color:var(--danger)">R$ 0,00</div></div>
         <div class="dash-card"><h6>Saldo</h6><div id="dash-lucro" style="color:var(--primary)">R$ 0,00</div></div>
     </div>
@@ -57,37 +57,33 @@
     <input type="text" id="search-box" placeholder="🔍 Pesquisar..." onkeyup="render()">
 
     <div class="tabs">
-        <button class="tab-btn active" id="btn-tab-vendas" onclick="switchTab(event, 'vendas')">Vendas</button>
-        <button class="tab-btn" id="btn-tab-contas" onclick="switchTab(event, 'contas')">Contas</button>
-        <button class="tab-btn" id="btn-tab-agenda" onclick="switchTab(event, 'agenda')">Agenda</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'vendas')">Vendas</button>
+        <button class="tab-btn" onclick="switchTab(event, 'contas')">Contas</button>
+        <button class="tab-btn" onclick="switchTab(event, 'agenda')">Agenda</button>
         <button class="tab-btn" onclick="switchTab(event, 'config')">⚙️</button>
     </div>
 
     <div id="sec-vendas" class="section active">
         <form id="f-vendas" onsubmit="handleVenda(event)">
             <input type="hidden" id="v-id">
-            <input type="text" id="v-cliente" value="Marcos Silva" placeholder="Nome do Cliente" required>
+            <input type="text" id="v-cliente" value="Marcos Silva" placeholder="Cliente" required>
             <input type="text" id="v-zap" value="11930193300" placeholder="WhatsApp" required>
-            <input type="text" id="v-prod" value="Corte de Cabelo" placeholder="Produto" required>
+            <input type="text" id="v-prod" value="Serviço" placeholder="Produto" required>
             <input type="number" step="0.01" id="v-valor" value="50.00" placeholder="Valor" required>
-            <input type="date" id="v-data" value="2026-02-28" required>
-            <textarea id="v-msg" rows="2" placeholder="Mensagem"></textarea>
-            <button type="submit" id="btn-v-main" class="btn btn-add">Salvar Venda</button>
-            <button type="button" class="btn" style="background:#ddd; color:#333" onclick="resetVenda()">Limpar</button>
+            <input type="date" id="v-data" value="2026-03-01" required>
+            <textarea id="v-msg" rows="2">Olá, segue lembrete de pagamento.</textarea>
+            <button type="submit" class="btn btn-add">Salvar Venda</button>
         </form>
         <ul id="listaVendas" class="lista"></ul>
-        <h4 style="color: var(--success)">✅ Pagos</h4>
-        <ul id="listaVendasPagas" class="lista"></ul>
     </div>
 
     <div id="sec-contas" class="section">
         <form id="f-contas" onsubmit="handleConta(event)">
             <input type="hidden" id="c-id">
-            <input type="text" id="c-nome" placeholder="Nome da Conta" required>
-            <input type="number" step="0.01" id="c-valor" placeholder="Valor" required>
-            <input type="date" id="c-data" required>
-            <button type="submit" id="btn-c-main" class="btn btn-add">Salvar Conta</button>
-            <button type="button" class="btn" style="background:#ddd; color:#333" onclick="resetConta()">Limpar</button>
+            <input type="text" id="c-nome" value="Internet" placeholder="Nome da Conta" required>
+            <input type="number" step="0.01" id="c-valor" value="100.00" placeholder="Valor" required>
+            <input type="date" id="c-data" value="2026-03-05" required>
+            <button type="submit" class="btn btn-add">Salvar Conta</button>
         </form>
         <ul id="listaContas" class="lista"></ul>
     </div>
@@ -95,14 +91,9 @@
     <div id="sec-agenda" class="section">
         <form id="f-agenda" onsubmit="handleAgenda(event)">
             <input type="hidden" id="a-id">
-            <input type="text" id="a-task" placeholder="Compromisso" required>
-            <select id="a-prio">
-                <option value="URGENTE">🔴 Urgente</option>
-                <option value="ROTINA" selected>🔵 Rotina</option>
-            </select>
-            <input type="date" id="a-data" required>
-            <button type="submit" id="btn-a-main" class="btn btn-add">Agendar</button>
-            <button type="button" class="btn" style="background:#ddd; color:#333" onclick="resetAgenda()">Limpar</button>
+            <input type="text" id="a-task" value="Ajuste" placeholder="Compromisso" required>
+            <input type="date" id="a-data" value="2026-03-10" required>
+            <button type="submit" class="btn btn-add">Agendar</button>
         </form>
         <ul id="listaAgenda" class="lista"></ul>
     </div>
@@ -110,17 +101,12 @@
     <div id="sec-config" class="section">
         <div class="card">
             <h4>⚙️ Configurações</h4>
-            <input type="text" id="cfg-pix" placeholder="Chave Pix">
+            <input type="text" id="cfg-pix" placeholder="Chave Pix" value="taty@pix.com">
             <button class="btn" style="background:var(--success)" onclick="savePix()">Salvar Pix</button>
-            <button class="btn" style="background:var(--info)" onclick="exportPDF()">PDF</button>
-            
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-            
-            <h4>💾 Backup de Dados</h4>
-            <p style="font-size: 11px; color: #888; margin-bottom: 10px;">Exporte para salvar ou importe para restaurar seus dados em outro celular.</p>
+            <button class="btn" style="background:var(--danger)" onclick="resetSaldo()">Zerar Recebido</button>
+            <hr>
             <button class="btn" style="background:var(--dark)" onclick="exportarBackup()">📤 Exportar Backup</button>
-            
-            <label class="btn" style="background:var(--warning); color: #000; display: block; text-align: center; line-height: 24px;">
+            <label class="btn" style="background:var(--warning); color: #000; display: block; text-align: center; cursor: pointer;">
                 📥 Importar Backup
                 <input type="file" id="importarFile" style="display: none;" onchange="importarBackup(event)">
             </label>
@@ -132,7 +118,8 @@
     let dbV = JSON.parse(localStorage.getItem('dbV')) || [];
     let dbC = JSON.parse(localStorage.getItem('dbC')) || [];
     let dbA = JSON.parse(localStorage.getItem('dbA')) || [];
-    let pix = localStorage.getItem('dbPix') || "";
+    let saldoRecebido = parseFloat(localStorage.getItem('saldoRecebido')) || 0;
+    let pix = localStorage.getItem('dbPix') || "taty@pix.com";
 
     function switchTab(e, tab) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -141,141 +128,94 @@
         if(e) e.target.classList.add('active');
     }
 
-    // --- FUNÇÕES DE BACKUP ---
-    function exportarBackup() {
-        const dados = {
-            vendas: dbV,
-            contas: dbC,
-            agenda: dbA,
-            pix: pix
-        };
-        const blob = new Blob([JSON.stringify(dados)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `backup_taty_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        alert("Backup exportado com sucesso!");
-    }
-
-    function importarBackup(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const dados = JSON.parse(e.target.result);
-                if (confirm("Isso irá substituir todos os dados atuais. Deseja continuar?")) {
-                    dbV = dados.vendas || [];
-                    dbC = dados.contas || [];
-                    dbA = dados.agenda || [];
-                    pix = dados.pix || "";
-                    
-                    localStorage.setItem('dbPix', pix);
-                    document.getElementById('cfg-pix').value = pix;
-                    
-                    render();
-                    alert("Dados importados com sucesso!");
-                }
-            } catch (err) {
-                alert("Erro ao ler o arquivo de backup.");
-            }
-        };
-        reader.readAsText(file);
-    }
-    // -------------------------
-
-    function handleAgenda(e) {
-        e.preventDefault();
-        const id = document.getElementById('a-id').value;
-        const a = { id: id ? parseInt(id) : Date.now(), t: document.getElementById('a-task').value, p: document.getElementById('a-prio').value, d: document.getElementById('a-data').value };
-        if(id) dbA = dbA.map(x => x.id == id ? a : x); else dbA.push(a);
-        resetAgenda(); render();
-    }
-    function resetAgenda() { document.getElementById('f-agenda').reset(); document.getElementById('a-id').value = ""; document.getElementById('btn-a-main').innerText = "Agendar"; document.getElementById('btn-a-main').className = "btn btn-add"; }
-    function editAgenda(id) {
-        const a = dbA.find(x => x.id == id);
-        document.getElementById('a-id').value = a.id; document.getElementById('a-task').value = a.t; document.getElementById('a-prio').value = a.p; document.getElementById('a-data').value = a.d;
-        document.getElementById('btn-a-main').innerText = "ATUALIZAR"; document.getElementById('btn-a-main').className = "btn btn-update";
-        switchTab(null, 'agenda'); document.getElementById('btn-tab-agenda').classList.add('active'); window.scrollTo(0,0);
-    }
-
     function handleVenda(e) {
         e.preventDefault();
         const id = document.getElementById('v-id').value;
-        const v = { id: id ? parseInt(id) : Date.now(), cli: document.getElementById('v-cliente').value, zap: document.getElementById('v-zap').value, prod: document.getElementById('v-prod').value, val: parseFloat(document.getElementById('v-valor').value), data: document.getElementById('v-data').value, msg: document.getElementById('v-msg').value, pago: id ? dbV.find(x => x.id == id).pago : false };
+        const v = { id: id ? parseInt(id) : Date.now(), cli: document.getElementById('v-cliente').value, zap: document.getElementById('v-zap').value, prod: document.getElementById('v-prod').value, val: parseFloat(document.getElementById('v-valor').value), data: document.getElementById('v-data').value, msg: document.getElementById('v-msg').value };
         if(id) dbV = dbV.map(x => x.id == id ? v : x); else dbV.push(v);
-        resetVenda(); render();
-    }
-    function resetVenda() { document.getElementById('f-vendas').reset(); document.getElementById('v-id').value = ""; document.getElementById('btn-v-main').innerText = "Salvar Venda"; document.getElementById('btn-v-main').className = "btn btn-add"; }
-    function editVenda(id) {
-        const v = dbV.find(x => x.id == id);
-        document.getElementById('v-id').value = v.id; document.getElementById('v-cliente').value = v.cli; document.getElementById('v-zap').value = v.zap; document.getElementById('v-prod').value = v.prod; document.getElementById('v-valor').value = v.val; document.getElementById('v-data').value = v.data; document.getElementById('v-msg').value = v.msg;
-        document.getElementById('btn-v-main').innerText = "ATUALIZAR"; document.getElementById('btn-v-main').className = "btn btn-update";
-        switchTab(null, 'vendas'); document.getElementById('btn-tab-vendas').classList.add('active'); window.scrollTo(0,0);
+        document.getElementById('f-vendas').reset(); document.getElementById('v-id').value = ""; render();
     }
 
-    function handleConta(e) {
-        e.preventDefault();
+    function confirmarPagamento(id, valor) {
+        saldoRecebido += valor;
+        dbV = dbV.filter(x => x.id !== id);
+        localStorage.setItem('saldoRecebido', saldoRecebido);
+        render();
+    }
+
+    function editVenda(id) {
+        const v = dbV.find(x => x.id == id);
+        document.getElementById('v-id').value = v.id; document.getElementById('v-cliente').value = v.cli; document.getElementById('v-zap').value = v.zap; document.getElementById('v-prod').value = v.prod; document.getElementById('v-valor').value = v.val; document.getElementById('v-data').value = v.data;
+        switchTab(null, 'vendas');
+    }
+
+    function handleConta(e) { 
+        e.preventDefault(); 
         const id = document.getElementById('c-id').value;
         const c = { id: id ? parseInt(id) : Date.now(), n: document.getElementById('c-nome').value, v: parseFloat(document.getElementById('c-valor').value), d: document.getElementById('c-data').value };
         if(id) dbC = dbC.map(x => x.id == id ? c : x); else dbC.push(c);
-        resetConta(); render();
+        document.getElementById('f-contas').reset(); document.getElementById('c-id').value = ""; render(); 
     }
-    function resetConta() { document.getElementById('f-contas').reset(); document.getElementById('c-id').value = ""; document.getElementById('btn-c-main').innerText = "Salvar Conta"; document.getElementById('btn-c-main').className = "btn btn-add"; }
+
     function editConta(id) {
         const c = dbC.find(x => x.id == id);
         document.getElementById('c-id').value = c.id; document.getElementById('c-nome').value = c.n; document.getElementById('c-valor').value = c.v; document.getElementById('c-data').value = c.d;
-        document.getElementById('btn-c-main').innerText = "ATUALIZAR"; document.getElementById('btn-c-main').className = "btn btn-update";
-        switchTab(null, 'contas'); document.getElementById('btn-tab-contas').classList.add('active'); window.scrollTo(0,0);
+        switchTab(null, 'contas');
     }
 
-    function savePix() { pix = document.getElementById('cfg-pix').value; localStorage.setItem('dbPix', pix); alert("Pix Salvo!"); }
-    function exportPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("Relatório Financeiro", 10, 10); doc.save("Relatorio.pdf"); }
+    function handleAgenda(e) { 
+        e.preventDefault(); 
+        const id = document.getElementById('a-id').value;
+        const a = { id: id ? parseInt(id) : Date.now(), t: document.getElementById('a-task').value, d: document.getElementById('a-data').value };
+        if(id) dbA = dbA.map(x => x.id == id ? a : x); else dbA.push(a);
+        document.getElementById('f-agenda').reset(); document.getElementById('a-id').value = ""; render(); 
+    }
+
+    function editAgenda(id) {
+        const a = dbA.find(x => x.id == id);
+        document.getElementById('a-id').value = a.id; document.getElementById('a-task').value = a.t; document.getElementById('a-data').value = a.d;
+        switchTab(null, 'agenda');
+    }
+
+    function savePix() { pix = document.getElementById('cfg-pix').value; localStorage.setItem('dbPix', pix); alert("Salvo!"); }
+    function resetSaldo() { if(confirm("Zerar recebidos?")) { saldoRecebido = 0; localStorage.setItem('saldoRecebido', 0); render(); } }
 
     function render() {
         localStorage.setItem('dbV', JSON.stringify(dbV));
         localStorage.setItem('dbC', JSON.stringify(dbC));
         localStorage.setItem('dbA', JSON.stringify(dbA));
-        const query = document.getElementById('search-box').value.toLowerCase();
+        const q = document.getElementById('search-box').value.toLowerCase();
         const hoje = new Date().toISOString().split('T')[0];
         let alertar = false;
 
-        const rec = dbV.filter(v=>!v.pago).reduce((s,v)=>s+v.val, 0);
-        const con = dbC.reduce((s,c)=>s+c.v, 0);
-        document.getElementById('dash-receber').innerText = `R$ ${rec.toFixed(2)}`;
-        document.getElementById('dash-contas').innerText = `R$ ${con.toFixed(2)}`;
-        document.getElementById('dash-lucro').innerText = `R$ ${(rec-con).toFixed(2)}`;
-        document.getElementById('cfg-pix').value = pix;
+        const totalContas = dbC.reduce((s, c) => s + c.v, 0);
+        document.getElementById('dash-recebido').innerText = `R$ ${saldoRecebido.toFixed(2)}`;
+        document.getElementById('dash-contas').innerText = `R$ ${totalContas.toFixed(2)}`;
+        document.getElementById('dash-lucro').innerText = `R$ ${(saldoRecebido - totalContas).toFixed(2)}`;
 
-        const lv = document.getElementById('listaVendas'); const lvp = document.getElementById('listaVendasPagas');
-        const lc = document.getElementById('listaContas'); const la = document.getElementById('listaAgenda');
-        lv.innerHTML = ''; lvp.innerHTML = ''; lc.innerHTML = ''; la.innerHTML = '';
+        const lv = document.getElementById('listaVendas'); const lc = document.getElementById('listaContas'); const la = document.getElementById('listaAgenda');
+        lv.innerHTML = ''; lc.innerHTML = ''; la.innerHTML = '';
 
         dbV.forEach(v => {
-            if(v.cli.toLowerCase().includes(query)) {
-                if(v.data < hoje && !v.pago) alertar = true;
-                const zap = `https://wa.me/${v.zap}?text=${encodeURIComponent(v.msg + "\nPix: " + pix)}`;
-                const item = `<li class="item"><b>${v.cli}</b> - R$ ${v.val.toFixed(2)}<div class="acoes"><button class="btn-mini" style="background:var(--success)" onclick="dbV=dbV.map(x=>x.id==${v.id}?{...x,pago:!x.pago}:x);render()">OK</button><button class="btn-mini" style="background:var(--info)" onclick="editVenda(${v.id})">✏️</button><a href="${zap}" target="_blank" class="btn-mini" style="background:var(--pix);text-decoration:none">ZAP</a><button class="btn-mini" style="background:var(--danger)" onclick="dbV=dbV.filter(x=>x.id!=${v.id});render()">✖</button></div></li>`;
-                if(v.pago) lvp.innerHTML += item; else lv.innerHTML += item;
+            if(v.cli.toLowerCase().includes(q)) {
+                const isVencido = v.data < hoje;
+                if(isVencido) alertar = true;
+                const zap = `https://wa.me/${v.zap}?text=${encodeURIComponent('Olá ' + v.cli + ', ' + v.msg + '\nPix: ' + pix)}`;
+                lv.innerHTML += `<li class="item ${isVencido ? 'vencido' : ''}"><b>${v.cli}</b> - R$ ${v.val.toFixed(2)}<div class="acoes"><button class="btn-mini" style="background:var(--success)" onclick="confirmarPagamento(${v.id}, ${v.val})">OK</button><button class="btn-mini" style="background:var(--info)" onclick="editVenda(${v.id})">✏️</button><a href="${zap}" target="_blank" class="btn-mini" style="background:var(--pix)">ZAP</a><button class="btn-mini" style="background:var(--danger)" onclick="dbV=dbV.filter(x=>x.id!=${v.id});render()">✖</button></div></li>`;
             }
         });
-
-        dbC.forEach(c => {
-            if(c.n.toLowerCase().includes(query)) {
-                if(c.d < hoje) alertar = true;
-                lc.innerHTML += `<li class="item"><b>${c.n}</b> - R$ ${c.v.toFixed(2)}<div class="acoes"><button class="btn-mini" style="background:var(--info)" onclick="editConta(${c.id})">✏️</button><button class="btn-mini" style="background:var(--danger)" onclick="dbC=dbC.filter(x=>x.id!=${c.id});render()">✖</button></div></li>`;
-            }
+        dbC.forEach(c => { 
+            const isVencido = c.d < hoje;
+            if(isVencido) alertar = true; 
+            lc.innerHTML += `<li class="item ${isVencido ? 'vencido' : ''}"><b>${c.n}</b> - R$ ${c.v.toFixed(2)} <div class="acoes"><button class="btn-mini" style="background:var(--info)" onclick="editConta(${c.id})">✏️</button><button class="btn-mini" style="background:var(--danger)" onclick="dbC=dbC.filter(x=>x.id!=${c.id});render()">✖</button></div></li>`; 
         });
-
-        dbA.forEach(a => {
-            if(a.t.toLowerCase().includes(query)) {
-                la.innerHTML += `<li class="item"><b>${a.t}</b> - ${a.d}<br><small>${a.p}</small><div class="acoes"><button class="btn-mini" style="background:var(--info)" onclick="editAgenda(${a.id})">✏️</button><button class="btn-mini" style="background:var(--danger)" onclick="dbA=dbA.filter(x=>x.id!=${a.id});render()">✖</button></div></li>`;
-            }
+        dbA.forEach(a => { 
+            la.innerHTML += `<li class="item"><b>${a.t}</b> - ${a.d} <div class="acoes"><button class="btn-mini" style="background:var(--info)" onclick="editAgenda(${a.id})">✏️</button><button class="btn-mini" style="background:var(--danger)" onclick="dbA=dbA.filter(x=>x.id!=${a.id});render()">✖</button></div></li>`; 
         });
         document.getElementById('alerta-vencido').style.display = alertar ? 'block' : 'none';
     }
+    function exportarBackup() { const b = new Blob([JSON.stringify({v:dbV, c:dbC, a:dbA, s:saldoRecebido, p:pix})], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'backup.json'; a.click(); }
+    function importarBackup(e) { const reader = new FileReader(); reader.onload = (f) => { const d = JSON.parse(f.target.result); dbV=d.v; dbC=d.c; dbA=d.a; saldoRecebido=d.s||0; pix=d.p; localStorage.setItem('saldoRecebido', saldoRecebido); render(); }; reader.readAsText(e.target.files[0]); }
     render();
 </script>
 </body>
